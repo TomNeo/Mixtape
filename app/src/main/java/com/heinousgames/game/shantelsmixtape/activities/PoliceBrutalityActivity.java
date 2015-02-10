@@ -36,7 +36,9 @@ public class PoliceBrutalityActivity extends SimpleBaseGameActivity {
     private final int CAMERA_WIDTH = 480;
     private final int CAMERA_HEIGHT = 748;
 
-    private int x, y;
+    private int x, y, hitCount;
+
+    private boolean[] treesUsed;
 
     private ITextureRegion copRegion, swingManRegion, walkManRegion, treeRegion;
     private ITexture copTexture, swingManTexture, walkManTexture, treeTexture;
@@ -131,6 +133,13 @@ public class PoliceBrutalityActivity extends SimpleBaseGameActivity {
 
         x = 0;
         y = 0;
+        hitCount = 100;
+
+        treesUsed = new boolean[5];
+
+        for (int i = 0; i < 5; i++) {
+            treesUsed[i] = false;
+        }
 
         mBackground = new Background(0, 0, 0, 1);
 
@@ -145,7 +154,7 @@ public class PoliceBrutalityActivity extends SimpleBaseGameActivity {
 
         for (int i = 0; i < 5; i++) {
             treeSprite[i] = new Sprite(x, y, treeRegion, getVertexBufferObjectManager());
-            walkingManSprite[i] = new Sprite(0, CAMERA_HEIGHT - walkManTexture.getHeight(), walkManRegion, getVertexBufferObjectManager());
+            walkingManSprite[i] = new Sprite(x, CAMERA_HEIGHT - walkManTexture.getHeight(), walkManRegion, getVertexBufferObjectManager());
             if (i < 2) {
                 x += CAMERA_WIDTH / 3;
                 //walkingManSprite[i].setScale(2);
@@ -156,8 +165,8 @@ public class PoliceBrutalityActivity extends SimpleBaseGameActivity {
                 x -= CAMERA_WIDTH / 3;
             }
 
-            walkingManSprite[i].setY(CAMERA_HEIGHT - walkingManSprite[i].getHeight());
-            walkingManSprite[i].registerEntityModifier(new LoopEntityModifier(new MoveXModifier(i+3, 0, CAMERA_WIDTH - walkingManSprite[i].getWidth())));
+            //walkingManSprite[i].setPosition(x, CAMERA_HEIGHT - walkingManSprite[i].getHeight());
+            //walkingManSprite[i].registerEntityModifier(new LoopEntityModifier(new MoveXModifier(i+3, 0, CAMERA_WIDTH - walkingManSprite[i].getWidth())));
             mScene.attachChild(treeSprite[i]);
             mScene.attachChild(walkingManSprite[i]);
         }
