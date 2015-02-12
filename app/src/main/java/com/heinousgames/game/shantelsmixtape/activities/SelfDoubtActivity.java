@@ -3,14 +3,25 @@ package com.heinousgames.game.shantelsmixtape.activities;
 import android.content.Intent;
 import android.content.SharedPreferences;
 
+import org.andengine.engine.camera.Camera;
 import org.andengine.engine.options.EngineOptions;
+import org.andengine.engine.options.ScreenOrientation;
+import org.andengine.engine.options.resolutionpolicy.RatioResolutionPolicy;
 import org.andengine.entity.scene.Scene;
+import org.andengine.entity.scene.background.Background;
 import org.andengine.ui.activity.SimpleBaseGameActivity;
 
 /**
  * Created by shanus on 1/9/15.
  */
 public class SelfDoubtActivity extends SimpleBaseGameActivity {
+
+    private final int CAMERA_WIDTH = 480;
+    private final int CAMERA_HEIGHT = 748;
+
+    private Camera mCamera;
+    private Scene mScene;
+    private Background mBackground;
 
     SharedPreferences myPrefs;
 
@@ -35,24 +46,29 @@ public class SelfDoubtActivity extends SimpleBaseGameActivity {
     @Override
     protected Scene onCreateScene() {
 
+        mScene = new Scene();
+
         // when game is over, save the data in the shared pref, finish the activity, and
         // start the main activity again
+        mBackground = new Background(0, 0, 0, 1);
 
+        mScene.setBackground(mBackground);
         //if won
-        myPrefs.edit().putBoolean("leftFinished", true).commit();
+      //  myPrefs.edit().putBoolean("leftFinished", true).commit();
         // else
-        myPrefs.edit().putBoolean("leftFinished", false).commit();
+     //   myPrefs.edit().putBoolean("leftFinished", false).commit();
 
-        Intent intent = new Intent(this, MainActivity.class);
-        startActivity(intent);
-        return null;
+        //Intent intent = new Intent(this, MainActivity.class);
+       // startActivity(intent);
+        return mScene;
     }
 
     @Override
     public EngineOptions onCreateEngineOptions() {
-
-
-
-        return null;
+        mCamera = new Camera(0.0F, 0.0F, CAMERA_WIDTH, CAMERA_HEIGHT);
+        EngineOptions localEngineOptions = new EngineOptions(true, ScreenOrientation.PORTRAIT_FIXED, new RatioResolutionPolicy(CAMERA_WIDTH, CAMERA_HEIGHT), mCamera);
+        localEngineOptions.getAudioOptions().setNeedsSound(true);
+        localEngineOptions.getAudioOptions().setNeedsMusic(true);
+        return localEngineOptions;
     }
 }
