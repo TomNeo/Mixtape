@@ -2,21 +2,26 @@ package com.heinousgames.game.shantelsmixtape.activities;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.util.Log;
+
+import com.heinousgames.game.shantelsmixtape.model.CopSprite;
+import com.heinousgames.game.shantelsmixtape.model.TreeSprite;
+import com.heinousgames.game.shantelsmixtape.model.WalkingManSprite;
 
 import org.andengine.engine.camera.Camera;
 import org.andengine.engine.handler.IUpdateHandler;
 import org.andengine.engine.options.EngineOptions;
 import org.andengine.engine.options.ScreenOrientation;
 import org.andengine.engine.options.resolutionpolicy.RatioResolutionPolicy;
-import org.andengine.entity.modifier.ColorModifier;
-import org.andengine.entity.modifier.LoopEntityModifier;
+import org.andengine.entity.IEntity;
 import org.andengine.entity.modifier.MoveModifier;
-import org.andengine.entity.modifier.MoveXModifier;
-import org.andengine.entity.modifier.ScaleModifier;
+import org.andengine.entity.scene.IOnAreaTouchListener;
+import org.andengine.entity.scene.ITouchArea;
 import org.andengine.entity.scene.Scene;
 import org.andengine.entity.scene.background.Background;
 import org.andengine.entity.scene.background.modifier.ColorBackgroundModifier;
 import org.andengine.entity.sprite.Sprite;
+import org.andengine.input.touch.TouchEvent;
 import org.andengine.opengl.texture.ITexture;
 import org.andengine.opengl.texture.bitmap.BitmapTexture;
 import org.andengine.opengl.texture.region.ITextureRegion;
@@ -24,9 +29,12 @@ import org.andengine.opengl.texture.region.TextureRegionFactory;
 import org.andengine.ui.activity.SimpleBaseGameActivity;
 import org.andengine.util.adt.io.in.IInputStreamOpener;
 import org.andengine.util.debug.Debug;
+import org.andengine.util.modifier.IModifier;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * Created by shanus on 1/9/15.
@@ -36,19 +44,19 @@ public class PoliceBrutalityActivity extends SimpleBaseGameActivity {
     private final int CAMERA_WIDTH = 480;
     private final int CAMERA_HEIGHT = 748;
 
-    private int x, y, hitCount;
+    private int x, y;
 
-    private boolean[] treesUsed;
-
-    private ITextureRegion copRegion, swingManRegion, walkManRegion, treeRegion;
-    private ITexture copTexture, swingManTexture, walkManTexture, treeTexture;
+    private ITextureRegion copRegion, walkManRegion, treeRegion;
+    private ITexture copTexture, walkManTexture, treeTexture;
 
     private Camera mCamera;
     private Scene mScene;
     private SharedPreferences myPrefs;
-    private Sprite copSprite, swingingManSprite;
-    private Sprite[] treeSprite, walkingManSprite;
+    private CopSprite copSprite;
+    private TreeSprite[] treeSprite;
+    private ArrayList<WalkingManSprite> walkingMen;
     private Background mBackground;
+    private MoveModifier mMoveToTreeMod;
 
     @Override
     protected void onCreateResources() {
@@ -63,19 +71,6 @@ public class PoliceBrutalityActivity extends SimpleBaseGameActivity {
             });
             this.copTexture.load();
             this.copRegion = TextureRegionFactory.extractFromTexture(this.copTexture);
-        } catch (IOException e) {
-            Debug.e(e);
-        }
-
-        try {
-            this.swingManTexture = new BitmapTexture(this.getTextureManager(), new IInputStreamOpener() {
-                @Override
-                public InputStream open() throws IOException {
-                    return getAssets().open("gfx/swinging_man.png");
-                }
-            });
-            this.swingManTexture.load();
-            this.swingManRegion = TextureRegionFactory.extractFromTexture(this.swingManTexture);
         } catch (IOException e) {
             Debug.e(e);
         }
@@ -133,13 +128,6 @@ public class PoliceBrutalityActivity extends SimpleBaseGameActivity {
 
         x = 0;
         y = 0;
-        hitCount = 100;
-
-        treesUsed = new boolean[5];
-
-        for (int i = 0; i < 5; i++) {
-            treesUsed[i] = false;
-        }
 
         mBackground = new Background(0, 0, 0, 1);
 
@@ -147,17 +135,18 @@ public class PoliceBrutalityActivity extends SimpleBaseGameActivity {
 
         mBackground.registerBackgroundModifier(new ColorBackgroundModifier(3, 0, 1, 0, 1, 0, 1));
 
-        copSprite = new Sprite(CAMERA_WIDTH/2 - copTexture.getWidth()/2, CAMERA_HEIGHT/2 - copTexture.getHeight()/2, copRegion, getVertexBufferObjectManager());
+        copSprite = new CopSprite(CAMERA_WIDTH/2 - copTexture.getWidth()/2, CAMERA_HEIGHT/2 - copTexture.getHeight()/2, copRegion, getVertexBufferObjectManager(), this);
 
-        treeSprite = new Sprite[5];
-        walkingManSprite = new Sprite[5];
+        mScene.registerTouchArea(copSprite);
+
+        treeSprite = new TreeSprite[5];
+        walkingMen = new ArrayList<WalkingManSprite>();
 
         for (int i = 0; i < 5; i++) {
-            treeSprite[i] = new Sprite(x, y, treeRegion, getVertexBufferObjectManager());
-            walkingManSprite[i] = new Sprite(x, CAMERA_HEIGHT - walkManTexture.getHeight(), walkManRegion, getVertexBufferObjectManager());
+            treeSprite[i] = new TreeSprite(x, y, treeRegion, getVertexBufferObjectManager(), this);
+            final WalkingManSprite wms = new WalkingManSprite(x, CAMERA_HEIGHT - walkManTexture.getHeight(), walkManRegion, getVertexBufferObjectManager());
             if (i < 2) {
                 x += CAMERA_WIDTH / 3;
-                //walkingManSprite[i].setScale(2);
             } else if (i == 2) {
                 y += treeTexture.getHeight();
                 x -= treeTexture.getWidth()/2;
@@ -165,46 +154,97 @@ public class PoliceBrutalityActivity extends SimpleBaseGameActivity {
                 x -= CAMERA_WIDTH / 3;
             }
 
-            //walkingManSprite[i].setPosition(x, CAMERA_HEIGHT - walkingManSprite[i].getHeight());
-            //walkingManSprite[i].registerEntityModifier(new LoopEntityModifier(new MoveXModifier(i+3, 0, CAMERA_WIDTH - walkingManSprite[i].getWidth())));
             mScene.attachChild(treeSprite[i]);
-            mScene.attachChild(walkingManSprite[i]);
+            mScene.attachChild(wms);
+            walkingMen.add(wms);
         }
 
         mScene.attachChild(copSprite);
 
-        copSprite.registerEntityModifier(new LoopEntityModifier(new ColorModifier(0.5f, 1, 0, 0, 0, 0, 1)));
-        copSprite.registerEntityModifier(new MoveModifier(3, copSprite.getX(), walkingManSprite[4].getX(), copSprite.getY(), walkingManSprite[4].getY()));
+        mScene.setOnAreaTouchListener(new IOnAreaTouchListener() {
+            @Override
+            public boolean onAreaTouched(TouchEvent touchEvent, ITouchArea iTouchArea, float v, float v2) {
+                if (iTouchArea.equals(copSprite) && touchEvent.isActionUp()) {
+                    copSprite.setHitCount(copSprite.getHitCount() - 1);
+                    Log.v("HitCount", String.valueOf(copSprite.getHitCount()));
+                }
+                return false;
+            }
+        });
 
-//        mScene.registerUpdateHandler(new IUpdateHandler() {
-//            @Override
-//            public void onUpdate(float v) {
-//                for (Sprite man : walkingManSprite) {
-//                    if (man.getX() >= CAMERA_WIDTH - man.getWidth()) {
-//                        man.setFlippedHorizontal(!man.isFlippedHorizontal());
-//                        man.registerEntityModifier(new MoveXModifier(7, man.getX(), 0));
-//                    } else if (man.getX() <= 0) {
-//                        man.setFlippedHorizontal(!man.isFlippedHorizontal());
-//                        man.registerEntityModifier(new MoveXModifier(7, man.getX(), CAMERA_WIDTH - man.getWidth()));
-//                    }
-//                }
-//            }
-//
-//            @Override
-//            public void reset() {
-//
-//            }
-//        });
+        mScene.registerUpdateHandler(new IUpdateHandler() {
+            @Override
+            public void onUpdate(float v) {
 
+                if (treeSprite[0].isUsed() && treeSprite[1].isUsed() && treeSprite[2].isUsed() && treeSprite[3].isUsed() && treeSprite[4].isUsed()) {
+                    myPrefs.edit().putBoolean("rightFinished", false).commit();
+                    Intent intent = new Intent(PoliceBrutalityActivity.this, MainActivity.class);
+                    startActivity(intent);
+                }
 
+                Iterator<WalkingManSprite> menIterator = walkingMen.iterator();
 
-        //if won
-//        myPrefs.edit().putBoolean("leftFinished", true).commit();
-        // else
-//        myPrefs.edit().putBoolean("leftFinished", false).commit();
+                while (menIterator.hasNext()) {
 
-//        Intent intent = new Intent(this, MainActivity.class);
-//        startActivity(intent);
+                    WalkingManSprite wms = menIterator.next();
+
+                    if (wms.collidesWith(copSprite) && !copSprite.hasPerson()) {
+                        wms.clearUpdateHandlers();
+                        wms.clearEntityModifiers();
+                        mScene.detachChild(wms);
+                        menIterator.remove();
+                        copSprite.setHasPerson(true);
+
+                        if (!treeSprite[0].isUsed())
+                            mMoveToTreeMod = new MoveModifier(3, copSprite.getX(), treeSprite[0].getX() + treeSprite[0].getWidth()/2,
+                                    copSprite.getY(), treeSprite[0].getY() + treeSprite[0].getHeight()/2);
+                        else if (!treeSprite[1].isUsed())
+                            mMoveToTreeMod = new MoveModifier(3, copSprite.getX(), treeSprite[1].getX() + treeSprite[1].getWidth()/2,
+                                    copSprite.getY(), treeSprite[1].getY() + treeSprite[1].getHeight()/2);
+                        else if (!treeSprite[2].isUsed())
+                            mMoveToTreeMod = new MoveModifier(3, copSprite.getX(), treeSprite[2].getX() + treeSprite[2].getWidth()/2,
+                                    copSprite.getY(), treeSprite[2].getY() + treeSprite[2].getHeight()/2);
+                        else if (!treeSprite[3].isUsed())
+                            mMoveToTreeMod = new MoveModifier(3, copSprite.getX(), treeSprite[3].getX() + treeSprite[3].getWidth()/2,
+                                    copSprite.getY(), treeSprite[3].getY() + treeSprite[3].getHeight()/2);
+                        else if (!treeSprite[4].isUsed())
+                            mMoveToTreeMod = new MoveModifier(3, copSprite.getX(), treeSprite[4].getX() + treeSprite[4].getWidth()/2,
+                                    copSprite.getY(), treeSprite[4].getY() + treeSprite[4].getHeight()/2);
+
+                        mMoveToTreeMod.addModifierListener(new IModifier.IModifierListener<IEntity>() {
+                            @Override
+                            public void onModifierStarted(IModifier<IEntity> iEntityIModifier, IEntity iEntity) {}
+
+                            @Override
+                            public void onModifierFinished(IModifier<IEntity> iEntityIModifier, IEntity iEntity) {
+                                copSprite.setHasPerson(false);
+                                copSprite.detachChildren();
+                                if (copSprite.collidesWith(treeSprite[0]))
+                                    treeSprite[0].setUsed(true);
+                                else if (copSprite.collidesWith(treeSprite[1]))
+                                    treeSprite[1].setUsed(true);
+                                else if (copSprite.collidesWith(treeSprite[2]))
+                                    treeSprite[2].setUsed(true);
+                                else if (copSprite.collidesWith(treeSprite[3]))
+                                    treeSprite[3].setUsed(true);
+                                else if (copSprite.collidesWith(treeSprite[4]))
+                                    treeSprite[4].setUsed(true);
+                                copSprite.setPosition(CAMERA_WIDTH/2 - copTexture.getWidth()/2, CAMERA_HEIGHT/2 - copTexture.getHeight()/2);
+                                mMoveToTreeMod.removeModifierListener(this);
+                            }
+                        });
+
+                        mMoveToTreeMod.reset();
+
+                        copSprite.registerEntityModifier(mMoveToTreeMod);
+                    }
+                }
+            }
+
+            @Override
+            public void reset() {}
+        });
+
         return mScene;
     }
 
@@ -216,4 +256,5 @@ public class PoliceBrutalityActivity extends SimpleBaseGameActivity {
         localEngineOptions.getAudioOptions().setNeedsMusic(true);
         return localEngineOptions;
     }
+
 }
