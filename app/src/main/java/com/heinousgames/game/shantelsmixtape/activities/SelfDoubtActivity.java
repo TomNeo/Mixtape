@@ -48,18 +48,34 @@ public class SelfDoubtActivity extends SimpleBaseGameActivity {
 
         mScene = new Scene();
 
+<<<<<<< HEAD
+=======
+        mBackground = new Background(0, 0, 0, 1);
+
+        mScene.setBackground(mBackground);
+
+>>>>>>> 59e96dd089bffc81c5ee71b852ebadbe3bd4b1d0
         // when game is over, save the data in the shared pref, finish the activity, and
         // start the main activity again
         mBackground = new Background(0, 0, 0, 1);
 
         mScene.setBackground(mBackground);
         //if won
+<<<<<<< HEAD
       //  myPrefs.edit().putBoolean("leftFinished", true).commit();
         // else
      //   myPrefs.edit().putBoolean("leftFinished", false).commit();
 
         //Intent intent = new Intent(this, MainActivity.class);
        // startActivity(intent);
+=======
+//        myPrefs.edit().putBoolean("leftFinished", true).commit();
+        // else
+//        myPrefs.edit().putBoolean("leftFinished", false).commit();
+
+//        Intent intent = new Intent(this, MainActivity.class);
+//        startActivity(intent);
+>>>>>>> 59e96dd089bffc81c5ee71b852ebadbe3bd4b1d0
         return mScene;
     }
 
