@@ -13,11 +13,15 @@ public class PlayerSprite extends AnimatedSprite {
 
     private boolean jumping = false;
     private boolean winCondition = false;
+    private int green;
+    private int red;
 
     public PlayerSprite(float pX, float pY, ITiledTextureRegion pTiledTextureRegion, VertexBufferObjectManager pVertexBufferObjectManager, BaseGameActivity activity) {
         super(pX, pY, pTiledTextureRegion, pVertexBufferObjectManager);
         this.setHeight(100);
         this.setWidth(100);
+        red = 0;
+        green = 0;
     }
 
     public boolean getJumping(){
@@ -32,8 +36,18 @@ public class PlayerSprite extends AnimatedSprite {
         return winCondition;
     }
 
-    public void SetWinCondition(boolean value){
-        winCondition = value;
+    public void countScore(boolean score){
+        if(score){
+            green++;
+        }else{
+            red++;
+        }
+    }
+
+    public void finalCount(){
+        if(green >= red){
+            winCondition = true;
+        }
     }
 
 }

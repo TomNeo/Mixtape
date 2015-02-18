@@ -79,6 +79,10 @@ public class SelfDoubtActivity extends SimpleBaseGameActivity {
         return mScene;
     }
 
+    public PlayerSprite getPlayer(){
+        return mPlayer;
+    }
+
     public void cleanUp(){
         trashBin.trimToSize();
         for(int i = 0; i < trashBin.size(); i++){
@@ -145,12 +149,6 @@ public class SelfDoubtActivity extends SimpleBaseGameActivity {
 
         mScene.setBackground(mBackground);
 
-        // when game is over, save the data in the shared pref, finish the activity, and
-        // start the main activity again
-        mBackground = new Background(0, 0, 0, 1);
-
-        mScene.setBackground(mBackground);
-
         mPlayer = new PlayerSprite((CAMERA_WIDTH/4-32),(CAMERA_HEIGHT/1.5f-32),PlayerRegion,getVertexBufferObjectManager(),this);
         mPlayer.animate(100,true);
 
@@ -193,24 +191,12 @@ public class SelfDoubtActivity extends SimpleBaseGameActivity {
 
               if(count == interval){
                   count = 0;
-                  BlockSprite BlockSpriteBuffer = new BlockSprite(CAMERA_WIDTH, ((CAMERA_HEIGHT/3)+(rand.nextInt(5)*80)),BlockRegion,getVertexBufferObjectManager(),SelfDoubtActivity.this);
-               //   MoveXModifier blockModifier = new MoveXModifier(2,BlockSpriteBuffer.getX(),BlockSpriteBuffer.getX() - CAMERA_WIDTH);
-               //   blockModifier.addModifierListener(new IModifier.IModifierListener<IEntity>(){
-              //        @Override
-                //      public void onModifierStarted(IModifier<IEntity> iEntityIModifier, IEntity iEntity) {
-
-                  //    }
-
-                 //     @Override
-                   //   public void onModifierFinished(IModifier<IEntity> iEntityIModifier, IEntity iEntity) {
-
-                     // }
-               //   });
-                  //BlockSpriteBuffer.registerEntityModifier();
+                  BlockSprite BlockSpriteBuffer = new BlockSprite(CAMERA_WIDTH, ((CAMERA_HEIGHT*2/3)-(rand.nextInt(5)*40)),BlockRegion,getVertexBufferObjectManager(),SelfDoubtActivity.this);
                   mScene.attachChild(BlockSpriteBuffer);
               }
 
               if(gameLength < 0) {
+                  mPlayer.finalCount();
                   if (mPlayer.getWinCondition())
                       myPrefs.edit().putBoolean("leftFinished", true).commit();
                   else
@@ -218,6 +204,7 @@ public class SelfDoubtActivity extends SimpleBaseGameActivity {
                   gameLength = GAME_LENGTH;
                   Intent intent = new Intent(SelfDoubtActivity.this, MainActivity.class);
                   startActivity(intent);
+                  finish();
               }
               cleanUp();
           }
@@ -226,22 +213,6 @@ public class SelfDoubtActivity extends SimpleBaseGameActivity {
         public void reset(){}
 
         });
-
-        //if won
-
-      //  myPrefs.edit().putBoolean("leftFinished", true).commit();
-        // else
-     //   myPrefs.edit().putBoolean("leftFinished", false).commit();
-
-        //Intent intent = new Intent(this, MainActivity.class);
-       // startActivity(intent);
-
-//        myPrefs.edit().putBoolean("leftFinished", true).commit();
-        // else
-//        myPrefs.edit().putBoolean("leftFinished", false).commit();
-
-//        Intent intent = new Intent(this, MainActivity.class);
-//        startActivity(intent);
 
         return mScene;
     }
