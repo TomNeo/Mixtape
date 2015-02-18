@@ -12,6 +12,7 @@ import org.andengine.engine.options.EngineOptions;
 import org.andengine.engine.options.ScreenOrientation;
 import org.andengine.engine.options.resolutionpolicy.RatioResolutionPolicy;
 import org.andengine.entity.IEntity;
+import org.andengine.entity.modifier.EntityModifier;
 import org.andengine.entity.modifier.JumpModifier;
 import org.andengine.entity.modifier.LoopEntityModifier;
 import org.andengine.entity.modifier.MoveXModifier;
@@ -35,6 +36,7 @@ import org.andengine.util.modifier.IModifier;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
+import java.util.ArrayList;
 import java.util.Random;
 
 /**
@@ -50,6 +52,7 @@ public class SelfDoubtActivity extends SimpleBaseGameActivity {
     private Scene mScene;
     private Background mBackground;
     private PlayerSprite mPlayer;
+    private ArrayList<IEntity>  trashBin;
 
     private TiledTextureRegion PlayerRegion;
     private ITexture PlayerTexture, BlockTexture;
@@ -61,6 +64,32 @@ public class SelfDoubtActivity extends SimpleBaseGameActivity {
 
     public SelfDoubtActivity() {
         gameLength = GAME_LENGTH;
+        trashBin = new ArrayList<IEntity>(0);
+    }
+
+    public int getCAMERA_WIDTH(){
+        return CAMERA_WIDTH;
+    }
+
+    public int getCAMERA_HEIGHT() {
+        return CAMERA_HEIGHT;
+    }
+
+    public Scene getScene(){
+        return mScene;
+    }
+
+    public void cleanUp(){
+        trashBin.trimToSize();
+        for(int i = 0; i < trashBin.size(); i++){
+            mScene.detachChild(trashBin.get(i));
+        }
+        trashBin.clear();
+        trashBin.trimToSize();
+    }
+
+    public void addToList(IEntity entity){
+        trashBin.add(entity);
     }
 
     @Override
@@ -151,10 +180,12 @@ public class SelfDoubtActivity extends SimpleBaseGameActivity {
             }
         });
 
+
         mScene.registerUpdateHandler(new IUpdateHandler() {
             int interval = 80;
             int count = 0;
             Random rand = new Random();
+
           @Override
            public void onUpdate(float time){
               gameLength--;
@@ -162,8 +193,20 @@ public class SelfDoubtActivity extends SimpleBaseGameActivity {
 
               if(count == interval){
                   count = 0;
-                  BlockSprite BlockSpriteBuffer = new BlockSprite(CAMERA_WIDTH, ((CAMERA_HEIGHT/3)+rand.nextInt(400)),BlockRegion,getVertexBufferObjectManager(),SelfDoubtActivity.this);
-                  BlockSpriteBuffer.registerEntityModifier(new MoveXModifier(2,BlockSpriteBuffer.getX(),BlockSpriteBuffer.getX() - CAMERA_WIDTH));
+                  BlockSprite BlockSpriteBuffer = new BlockSprite(CAMERA_WIDTH, ((CAMERA_HEIGHT/3)+(rand.nextInt(5)*80)),BlockRegion,getVertexBufferObjectManager(),SelfDoubtActivity.this);
+               //   MoveXModifier blockModifier = new MoveXModifier(2,BlockSpriteBuffer.getX(),BlockSpriteBuffer.getX() - CAMERA_WIDTH);
+               //   blockModifier.addModifierListener(new IModifier.IModifierListener<IEntity>(){
+              //        @Override
+                //      public void onModifierStarted(IModifier<IEntity> iEntityIModifier, IEntity iEntity) {
+
+                  //    }
+
+                 //     @Override
+                   //   public void onModifierFinished(IModifier<IEntity> iEntityIModifier, IEntity iEntity) {
+
+                     // }
+               //   });
+                  //BlockSpriteBuffer.registerEntityModifier();
                   mScene.attachChild(BlockSpriteBuffer);
               }
 
@@ -176,6 +219,7 @@ public class SelfDoubtActivity extends SimpleBaseGameActivity {
                   Intent intent = new Intent(SelfDoubtActivity.this, MainActivity.class);
                   startActivity(intent);
               }
+              cleanUp();
           }
 
             @Override
