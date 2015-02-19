@@ -2,9 +2,11 @@ package com.heinousgames.game.shantelsmixtape.activities;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Typeface;
 
 import com.heinousgames.game.shantelsmixtape.model.BlockSprite;
 import com.heinousgames.game.shantelsmixtape.model.PlayerSprite;
+import com.heinousgames.game.shantelsmixtape.model.WordText;
 
 import org.andengine.engine.camera.Camera;
 import org.andengine.engine.handler.IUpdateHandler;
@@ -22,7 +24,10 @@ import org.andengine.entity.scene.background.Background;
 import org.andengine.entity.sprite.AnimatedSprite;
 import org.andengine.entity.sprite.Sprite;
 import org.andengine.input.touch.TouchEvent;
+import org.andengine.opengl.font.Font;
 import org.andengine.opengl.texture.ITexture;
+import org.andengine.opengl.texture.TextureOptions;
+import org.andengine.opengl.texture.atlas.bitmap.BitmapTextureAtlas;
 import org.andengine.opengl.texture.bitmap.BitmapTexture;
 import org.andengine.opengl.texture.region.ITextureRegion;
 import org.andengine.opengl.texture.region.ITiledTextureRegion;
@@ -30,6 +35,7 @@ import org.andengine.opengl.texture.region.TextureRegionFactory;
 import org.andengine.opengl.texture.region.TiledTextureRegion;
 import org.andengine.ui.activity.SimpleBaseGameActivity;
 import org.andengine.util.adt.io.in.IInputStreamOpener;
+import android.graphics.Color;
 import org.andengine.util.debug.Debug;
 import org.andengine.util.modifier.IModifier;
 
@@ -38,6 +44,8 @@ import java.io.InputStream;
 import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.Random;
+
+import static org.andengine.util.color.Color.*;
 
 /**
  * Created by shanus on 1/9/15.
@@ -48,6 +56,9 @@ public class SelfDoubtActivity extends SimpleBaseGameActivity {
     private final int CAMERA_HEIGHT = 748;
     private final int GAME_LENGTH = 2000;
 
+    private final String[] GoodWords = new String[]{"Glory","Pride","Spirit","Strength","Joyous","Truth","Justice","Liberty","Hope","Succeed"};
+    private final String[] BadWords = new String[]{"Hate","Failure","Useless","Pity","Loser","Freak","Greed","Fear","Weak","Defeated"};
+
     private Camera mCamera;
     private Scene mScene;
     private Background mBackground;
@@ -56,6 +67,8 @@ public class SelfDoubtActivity extends SimpleBaseGameActivity {
 
     private TiledTextureRegion PlayerRegion;
     private ITexture PlayerTexture, BlockTexture;
+    private BitmapTextureAtlas mFontTexture;
+    private Font mFont;
 
     private float gameLength;
 
@@ -125,6 +138,13 @@ public class SelfDoubtActivity extends SimpleBaseGameActivity {
         } catch (IOException e) {
             Debug.e(e);
         }
+
+        this.mFontTexture = new BitmapTextureAtlas(mEngine.getTextureManager(),256, 256, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+
+        this.mFont = new Font(this.getFontManager(),this.mFontTexture, Typeface.create(Typeface.DEFAULT, Typeface.BOLD), 32, true, Color.YELLOW);
+
+        this.mEngine.getTextureManager().loadTexture(this.mFontTexture);
+        this.getFontManager().loadFont(this.mFont);
     }
 
     /**
@@ -191,8 +211,20 @@ public class SelfDoubtActivity extends SimpleBaseGameActivity {
 
               if(count == interval){
                   count = 0;
-                  BlockSprite BlockSpriteBuffer = new BlockSprite(CAMERA_WIDTH, ((CAMERA_HEIGHT*2/3)-(rand.nextInt(5)*40)),BlockRegion,getVertexBufferObjectManager(),SelfDoubtActivity.this);
-                  mScene.attachChild(BlockSpriteBuffer);
+                  WordText WordTextBuffer;
+                  if(rand.nextInt(2)==0){
+                      WordTextBuffer = new WordText(CAMERA_WIDTH,((CAMERA_HEIGHT*2/3)-(rand.nextInt(5)*40)),mFont,BadWords[rand.nextInt(BadWords.length-1)],getVertexBufferObjectManager(),SelfDoubtActivity.this);
+                      WordTextBuffer.setColor(1,0,0,1);
+                      WordTextBuffer.setScore(false);
+
+                  }else{
+                      WordTextBuffer = new WordText(CAMERA_WIDTH,((CAMERA_HEIGHT*2/3)-(rand.nextInt(5)*40)),mFont,GoodWords[rand.nextInt(GoodWords.length-1)],getVertexBufferObjectManager(),SelfDoubtActivity.this);
+                      WordTextBuffer.setColor(0,1,0,1);
+                      WordTextBuffer.setScore(true);
+                  }
+                  mScene.attachChild(WordTextBuffer);
+                  //BlockSprite BlockSpriteBuffer = new BlockSprite(CAMERA_WIDTH, ((CAMERA_HEIGHT*2/3)-(rand.nextInt(5)*40)),BlockRegion,getVertexBufferObjectManager(),SelfDoubtActivity.this);
+                  //mScene.attachChild(BlockSpriteBuffer);
               }
 
               if(gameLength < 0) {
